@@ -64,17 +64,27 @@ class Configuration:
 
         # Clears the buffers and sets DEPTH_TEST to remove hidden surfaces
         gl.glClear(gl.GL_COLOR_BUFFER_BIT|gl.GL_DEPTH_BUFFER_BIT)                  
-        gl.glEnable(gl.GL_DEPTH_TEST)   
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL) # on trace les faces : GL_FILL
+        gl.glBegin(gl.GL_QUADS) # Tracé d’un quadrilatère
+        gl.glColor3fv([0.5, 0.5, 0.5]) # Couleur gris moyen
+        gl.glVertex3fv([0, 0, 0])
+        gl.glVertex3fv([1, 0, 0])
+        gl.glVertex3fv([1, 0, 1])
+        gl.glVertex3fv([0, 0, 1])
+        gl.glEnd()   
         
     # Initializes the tranformation matrix    
     def initializeTransformationMatrix(self):     
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         glu.gluPerspective(70, (self.screen.get_width()/self.screen.get_height()), 0.1, 100.0)
-
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
         gl.glTranslatef(0.0,0.0, self.parameters['screenPosition'])       
+        gl.glRotatef(-90 ,1 , 0, 0)
+
         
     # Getter
     def getParameter(self, parameterKey):
@@ -141,6 +151,12 @@ class Configuration:
             gl.glRotate(-2.5, 0, 0, 1)                     
         elif self.event.dict['unicode'] == 'z' or self.event.key == pygame.K_z:
             gl.glRotate(2.5, 0, 0, 1) 
+
+        # zoom dezoom
+        elif self.event.key == pygame.K_PAGEUP: 
+                gl.glScalef(1.1, 1.1, 1.1)
+        elif self.event.key == pygame.K_PAGEDOWN: 
+                gl.glScalef(1/1.1, 1/1.1, 1/1.1)
         
         # Draws or suppresses the reference frame
         elif self.event.dict['unicode'] == 'a' or self.event.key == pygame.K_a:
@@ -149,12 +165,19 @@ class Configuration:
     
     # Processes the MOUSEBUTTONDOWN event
     def processMouseButtonDownEvent(self):
-        pass
+        if self.event.button == 4: 
+                gl.glScalef(1.1, 1.1, 1.1)
+        elif self.event.button == 5: 
+                gl.glScalef(1/1.1, 1/1.1, 1/1.1)
     
     # Processes the MOUSEMOTION event
     def processMouseMotionEvent(self):
-        pass
-         
+        if pygame.mouse.get_pressed()[0] == 1:
+            gl.glRotate(self.event.rel[0]/5, 0, 0, 1) 
+            gl.glRotate(self.event.rel[1]/5, 1, 0, 0)
+        elif pygame.mouse.get_pressed()[2] == 1:
+            gl.glTranslatef(self.event.rel[0]/50,0,0) 
+            gl.glTranslatef(0,0,-self.event.rel[1]/50)
     # Displays on screen and processes events    
     def display(self): 
            
@@ -176,14 +199,11 @@ class Configuration:
             # Quit pygame (compatibility with pygame1.9.6 and 2.0.0)
             if self.event.type == pygame.QUIT or (self.event.type == pygame.WINDOWEVENT and pygame.event.wait(100).type == pygame.QUIT):
                 pygame.quit()
-                break  
-
-            elif self.event.type == pygame.KEYDOWN: 
-                self.processKeyDownEvent()
-                
+                break    
             elif self.event.type == pygame.MOUSEBUTTONDOWN:
                 self.processMouseButtonDownEvent() 
-            
+            elif self.event.type == pygame.KEYDOWN: 
+                self.processKeyDownEvent()
             elif self.event.type == pygame.MOUSEMOTION: 
                 self.processMouseMotionEvent()
                 
